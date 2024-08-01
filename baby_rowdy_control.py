@@ -2308,7 +2308,7 @@ def robot_control():
                 #step()#uses the global variable num_cycles
                     
 
-                # = [step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang,step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang]
+                #STEP_amplitudes = [step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang,step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang]
                 #STEP_amplitudes = np.radians(STEP_amplitudes)
                 sinusolidal_step(STEP_amplitudes)
                 #home() #send it to home last to return to the middle position
@@ -2321,7 +2321,7 @@ def robot_control():
                 #step()#uses the global variable num_cycles
                     
 
-                # = [step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang,step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang]
+                #STEP_amplitudes = [step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang,step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang]
                 #STEP_amplitudes = np.radians(STEP_amplitudes)
                 sinusolidal_step(Jogging_amplitudes)
                 #home() #send it to home last to return to the middle position
