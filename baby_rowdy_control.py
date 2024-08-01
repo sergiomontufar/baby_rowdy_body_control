@@ -150,7 +150,12 @@ August 7, 2024
             + The protection was NOT being executed!!
             + Now it is executed in the finction read_variables()  every 10MSec
             + Set to: MAX_CURRENT = 10.0
-        
+
+
+Git
+August 15, 2024
+    - First version that integrates the control program with the NVIDIA Isaac sim
+    - There is  locl repository in the raspberry and a remote repository in: TBD!!         
 To do..   
     - adition to sequential home roitine, one leg a a time
     - Equilibrium functions implemented
