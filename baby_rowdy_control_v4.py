@@ -150,12 +150,7 @@ August 7, 2024
             + The protection was NOT being executed!!
             + Now it is executed in the finction read_variables()  every 10MSec
             + Set to: MAX_CURRENT = 10.0
-
-
-Git
-August 15, 2024
-    - First version that integrates the control program with the NVIDIA Isaac sim
-    - There is  locl repository in the raspberry and a remote repository in: TBD!!         
+        
 To do..   
     - adition to sequential home roitine, one leg a a time
     - Equilibrium functions implemented
@@ -166,50 +161,32 @@ import sys
 import matplotlib.pyplot as plt
 from time import sleep
 from random import uniform
+
 import numpy as np
 import time
 import math
+from TMotorCANControl.mit_can import TMotorManager_mit_can
 
-isReal = True
-
-if isReal:
-
-    from TMotorCANControl.mit_can import TMotorManager_mit_can
-    from witmotion import IMU
-
-
-    def millis():
-        return round(time.time()*1000)
-
-    def callback_IMU(msg):
-        global RPY_angles
-        
-        #print(msg)
-        imu_string= imu.get_angle()
-        #print (imu_string)
-        #imu.get_angular_velocity()
-        #imu.get_acceleration()
-        
-
-        roll, pitch, jaw = imu_string
-        #print (f"Roll = {roll}, Pitch = {pitch}, Jaw = {jaw}")
-        RPY_angles = roll, pitch, jaw 
-        #print(RPY_angles)
-else:
-    from ..classical_control_connector import TMotorManager_mit_can, IMU, millis
-    from ... import global_variables
-
-    def callback_IMU(data):
-        global RPY_angles
-
-        roll, pitch, yaw = data
-
-        RPY_angles = roll, pitch, yaw
+from witmotion import IMU
 
 ##########################################################
 # IMU setup
 RPY_angles = [0.0, 0.0, 0.0]  # Initializing as a list with three float values
 
+def callback_IMU(msg):
+    global RPY_angles
+    
+    #print(msg)
+    imu_string= imu.get_angle()
+    #print (imu_string)
+    #imu.get_angular_velocity()
+    #imu.get_acceleration()
+    
+
+    roll, pitch, jaw = imu_string
+    #print (f"Roll = {roll}, Pitch = {pitch}, Jaw = {jaw}")
+    RPY_angles = roll, pitch, jaw 
+    #print(RPY_angles)
     
 imu = IMU()
 imu.subscribe(callback_IMU)
@@ -401,9 +378,9 @@ import json
 ############################################################################
 # MQTT Parameters & Functions
 
-serverAddress = "localhost"
+#serverAddress = "localhost"
 #serverAddress = "127.0.0.1"
-# serverAddress = "rollie-body-pi"
+serverAddress = "rollie-body-pi"
 #serverAddress = "baby-body-pi"
 #serverAddress = "192.168.8.7"
 
@@ -701,44 +678,7 @@ def publish_message(client, topic, message):
     #print("Message published:", message)
 
 
-# if not isReal:
-#     mqttClient = None
 
-def setup_mqtt():
-    print('----------------------------------------')
-    global didPrintSubscribeMessage
-    global mqttClient
-
-    didPrintSubscribeMessage = False
-    # Set up calling functions to mqttClient
-    mqttClient = mqtt.Client()
-    mqttClient.on_connect = on_connect  # attach function to callback
-    mqttClient.on_message = on_message  # attach function to callback
-
-
-
-    print("mqtt server address is:", serverAddress)
-    mqttClient.connect(serverAddress)
-    
-    # Connect to the MQTT server  in the local LAN & loop forever.
-    # CTRL-C will stop the program from running.   
-    #mqttClient.loop_forever()# use this line if you don't want to write any further code. It blocks the code forever to check for data
-
-    # Start the MQTT client in a non-blocking thread
-    mqttClient.loop_start() #use this line if you want to write any more code here to execute along the mqtt client
-
-    print('----------------------------------------')
-
-
-def stop_mqtt():
-    global mqttClient
-    global didPrintSubscribeMessage
-
-    if(mqttClient is not None):
-        print("No Longer Listening")
-        mqttClient.disconnect()
-        mqttClient.loop_stop()
-        didPrintSubscribeMessage = False
 
 ##########################################################
 # T-Motors control routines
@@ -1111,6 +1051,8 @@ def display_ang_torques():
             # Publish JSON string to MQTT broker
         publish_message(mqttClient, topic, json_string_with_newline)
       
+def millis():
+    return round(time.time() *1000)
     
 def init_motors():
     display_ang_positions()
@@ -1234,19 +1176,11 @@ def set_ang_position(positions):
             # Join the formatted strings into a single string and print
             print(f" Desired positions (degrees): {', '.join(formatted_numbers)}")  
             
-        angles = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]   
-
-        if isReal:
-            # print("Real Code")  
-            for idx, motor in enumerate(motors):
-                angles[idx] =  ZERO_POSITIONS[idx]+ positions[idx]
-                motor.position =  angles[idx]
-                motor.update
-        else:
-            print("Simulated Code")
-            for idx, motor in enumerate(motors):
-                angles[idx] = ZERO_POSITIONS[idx]+ positions[idx]
-                motor.set_pos(angles[idx])
+        angles = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]    
+        for idx, motor in enumerate(motors):
+            angles[idx] =  ZERO_POSITIONS[idx]+ positions[idx]
+            motor.position =  angles[idx]
+            motor.update
 
 #Moves to a XYZ position by using the inverse kinematic model, no trajectory!
 def set_XYZ_position(XYZ_position):
@@ -1647,26 +1581,26 @@ def setup_sinusolidal_Jogging_step(cycles):
     print("sin_trajectory:",sin_trajectory )
 
     #Plotting the sinusoidal functions from the global array
-    # plt.figure(figsize=(10, 6))
-    # plt.plot(t2, sin_trajectory[:, 0], label=f'Sinusoid M3 - {frequency2} Hz')
-    # plt.plot(t2, sin_trajectory[:, 1], label=f'Sinusoid M2 - {frequency3} Hz')
-    # plt.plot(t2, sin_trajectory[:, 2], label=f'Sinusoid M6 - {main_frequency} Hz')
-    # plt.plot(t2, sin_trajectory[:, 3], label=f'Sinusoid M9 - {0} Hz')
-    # plt.plot(t2, sin_trajectory[:, 4], label=f'Sinusoid M5 - {frequency2} Hz')
-    # plt.plot(t2, sin_trajectory[:, 5], label=f'Sinusoid M4 - {frequency3} Hz')
-    # plt.plot(t2, sin_trajectory[:, 6], label=f'Sinusoid M7 - {main_frequency} Hz')
-    # plt.plot(t2, sin_trajectory[:, 7], label=f'Sinusoid M8 - {0} Hz')
-    # plt.plot(t2, sin_trajectory[:, 8], label=f'Sinusoid M10 - {main_frequency} Hz')
-    # plt.plot(t2, sin_trajectory[:, 9], label=f'Sinusoid M12 - {frequency4} Hz')
-    # plt.plot(t2, sin_trajectory[:, 10], label=f'Sinusoid M11 - {frequency4} Hz')
+    plt.figure(figsize=(10, 6))
+    plt.plot(t2, sin_trajectory[:, 0], label=f'Sinusoid M3 - {frequency2} Hz')
+    plt.plot(t2, sin_trajectory[:, 1], label=f'Sinusoid M2 - {frequency3} Hz')
+    plt.plot(t2, sin_trajectory[:, 2], label=f'Sinusoid M6 - {main_frequency} Hz')
+    plt.plot(t2, sin_trajectory[:, 3], label=f'Sinusoid M9 - {0} Hz')
+    plt.plot(t2, sin_trajectory[:, 4], label=f'Sinusoid M5 - {frequency2} Hz')
+    plt.plot(t2, sin_trajectory[:, 5], label=f'Sinusoid M4 - {frequency3} Hz')
+    plt.plot(t2, sin_trajectory[:, 6], label=f'Sinusoid M7 - {main_frequency} Hz')
+    plt.plot(t2, sin_trajectory[:, 7], label=f'Sinusoid M8 - {0} Hz')
+    plt.plot(t2, sin_trajectory[:, 8], label=f'Sinusoid M10 - {main_frequency} Hz')
+    plt.plot(t2, sin_trajectory[:, 9], label=f'Sinusoid M12 - {frequency4} Hz')
+    plt.plot(t2, sin_trajectory[:, 10], label=f'Sinusoid M11 - {frequency4} Hz')
 
 
-    # plt.title('Four Sinusoidal Functions with delay  Shift')
-    # plt.xlabel('Time (seconds)')
-    # plt.ylabel('amplitude')
-    # plt.legend()
-    # plt.grid(True)
-    # plt.show()
+    plt.title('Four Sinusoidal Functions with delay  Shift')
+    plt.xlabel('Time (seconds)')
+    plt.ylabel('amplitude')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 
 
@@ -1826,26 +1760,26 @@ def setup_sinusolidal_step(cycles):
     print("sin_trajectory:",sin_trajectory )
 
     #Plotting the sinusoidal functions from the global array
-    # plt.figure(figsize=(10, 6))
-    # plt.plot(t2, sin_trajectory[:, 0], label=f'Sinusoid M3 - {frequency2} Hz')
-    # plt.plot(t2, sin_trajectory[:, 1], label=f'Sinusoid M2 - {frequency3} Hz')
-    # plt.plot(t2, sin_trajectory[:, 2], label=f'Sinusoid M6 - {main_frequency} Hz')
-    # plt.plot(t2, sin_trajectory[:, 3], label=f'Sinusoid M9 - {0} Hz')
-    # plt.plot(t2, sin_trajectory[:, 4], label=f'Sinusoid M5 - {frequency2} Hz')
-    # plt.plot(t2, sin_trajectory[:, 5], label=f'Sinusoid M4 - {frequency3} Hz')
-    # plt.plot(t2, sin_trajectory[:, 6], label=f'Sinusoid M7 - {main_frequency} Hz')
-    # plt.plot(t2, sin_trajectory[:, 7], label=f'Sinusoid M8 - {0} Hz')
-    # plt.plot(t2, sin_trajectory[:, 8], label=f'Sinusoid M10 - {main_frequency} Hz')
-    # plt.plot(t2, sin_trajectory[:, 9], label=f'Sinusoid M12 - {frequency4} Hz')
-    # plt.plot(t2, sin_trajectory[:, 10], label=f'Sinusoid M11 - {frequency4} Hz')
+    plt.figure(figsize=(10, 6))
+    plt.plot(t2, sin_trajectory[:, 0], label=f'Sinusoid M3 - {frequency2} Hz')
+    plt.plot(t2, sin_trajectory[:, 1], label=f'Sinusoid M2 - {frequency3} Hz')
+    plt.plot(t2, sin_trajectory[:, 2], label=f'Sinusoid M6 - {main_frequency} Hz')
+    plt.plot(t2, sin_trajectory[:, 3], label=f'Sinusoid M9 - {0} Hz')
+    plt.plot(t2, sin_trajectory[:, 4], label=f'Sinusoid M5 - {frequency2} Hz')
+    plt.plot(t2, sin_trajectory[:, 5], label=f'Sinusoid M4 - {frequency3} Hz')
+    plt.plot(t2, sin_trajectory[:, 6], label=f'Sinusoid M7 - {main_frequency} Hz')
+    plt.plot(t2, sin_trajectory[:, 7], label=f'Sinusoid M8 - {0} Hz')
+    plt.plot(t2, sin_trajectory[:, 8], label=f'Sinusoid M10 - {main_frequency} Hz')
+    plt.plot(t2, sin_trajectory[:, 9], label=f'Sinusoid M12 - {frequency4} Hz')
+    plt.plot(t2, sin_trajectory[:, 10], label=f'Sinusoid M11 - {frequency4} Hz')
 
 
-    # plt.title('Four Sinusoidal Functions with delay  Shift')
-    # plt.xlabel('Time (seconds)')
-    # plt.ylabel('amplitude')
-    # plt.legend()
-    # plt.grid(True)
-    # plt.show()
+    plt.title('Four Sinusoidal Functions with delay  Shift')
+    plt.xlabel('Time (seconds)')
+    plt.ylabel('amplitude')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 
 
@@ -1941,7 +1875,11 @@ def jogging_step(amplitudes):
     else:
         local_cycles = 0
         idx_theta = 0
-        command = ""   # VERY IMPORTANT, to finish the movement! 
+        command = ""   # VERY IMPORTANT, to finish the movement!
+            
+
+
+   
                                      
 def step():
     global num_cycles
@@ -2005,231 +1943,7 @@ def condini():
     desired_ang_position = ZERO_POSITIONS  
     
     print("\n****************** INI_POSITIONS: ",np.degrees(INI_POSITIONS))
-
-def robot_control_logic():
-    global command
-    global new_ang_position
-    global old_ang_position
-    global old_XYZ_position
-    global desired_ang_position
-    global  trajectory_finished
-    global salir
-    global debug
     
-    global step_upper_leg_ang
-    global step_lower_leg_ang 
-    global step_CM_displacement_ang 
-    global main_period
-    global step_delay_sin_lower_leg 
-    global step_delay_sin_upper_leg 
-    global half_size_step 
-    global step_turn_ang 
-    global STEP_amplitudes
-
-    global Millis_ant
-    global trajectory_finished
-    global count
-    global Period
-
-
-    CurrentMillis = millis()
-    if (CurrentMillis - Millis_ant) >= Period:  # Entra cada "Period" segundos" 
-        Millis_ant = CurrentMillis
-        
-            #every 10 mSeg
-        read_variables()  #this updates old_ang_position & old_XYZ_position
-        if not trajectory_finished:
-            execute_trajectory()
-        else:    
-            set_ang_position(desired_ang_position)
-            
-        count+=1
-            #every 100 mSeg
-        if count >= 10:
-            count = 0
-            publish_variables()
-            display_RPY_angles()   
-            
-            
-        if command == "home":
-            print("\r Going home")
-            debug = 1
-            home()
-            command ="" 
-        if command == "reset":
-            print("\r Going reset")
-            debug = 1
-            reset()
-            command ="" 
-            
-        if command == "up_down":
-            #print("\r Going up_down")
-            debug = 1
-            #home() #send it to home first to avoid a jump to the middle position
-            up_down()#uses the global variable num_cycles
-            
-            #command =""  DO NOT pu this line. command needs to be unchangend to let the program enters here until the end of the cycles
-            
-        if command == "Forward_step":
-            #print("\r Going step")
-            debug = 1
-            #home() #send it to home first to avoid a jump to the middle position
-            #step()#uses the global variable num_cycles
-                
-
-            # = [step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang,step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang]
-            #STEP_amplitudes = np.radians(STEP_amplitudes)
-            sinusolidal_step(STEP_amplitudes)
-            #home() #send it to home last to return to the middle position
-            #command =""  DO NOT pu this line. command needs to be unchangend to let the program enters here until the end of the cycles
-            
-        if command == "Jogging_step":
-            #print("\r Going step")
-            debug = 1
-            #home() #send it to home first to avoid a jump to the middle position
-            #step()#uses the global variable num_cycles
-                
-
-            # = [step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang,step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang]
-            #STEP_amplitudes = np.radians(STEP_amplitudes)
-            sinusolidal_step(Jogging_amplitudes)
-            #home() #send it to home last to return to the middle position
-            #command =""  DO NOT pu this line. command needs to be unchangend to let the program enters here until the end of the cycles  
-            
-        if command == "side_step":
-            #print("\r Going side_step")
-            debug = 1
-            #home() #send it to home first to avoid a jump to the middle position
-            #step()#uses the global variable num_cycles
-            sinusolidal_step(SIDE_STEP_amplitudes)
-            #home() #send it to home last to return to the middle position
-            #command =""  DO NOT pu this line. command needs to be unchangend to let the program enters here until the end of the cycles                
-            
-        elif command == "positionXYZ":
-            debug = 1
-            set_XYZ_position(new_XYZ_position)
-            command =""
-        elif command == "TrajectoryXYZ":
-            debug = 1
-            #trajectory_XYZ(new_XYZ_position)
-            trajectory_ang_XYZ(new_XYZ_position)
-            command =""   
-        elif command == "monitor_angles":
-            debug = 2
-            display_ang_positions()
-            command =""
-        elif command == "monitor_XYZ":
-            debug = 1
-            display_XYZ_positions()
-            command =""
-        elif command == "monitor_RPY":
-            debug = 1
-            display_RPY_angles()
-            command =""
-        elif command == "monitor_torques":
-            debug = 1
-            display_ang_torques()  
-            command =""                
-        elif command == "monitor_currents":
-            debug = 1
-            display_ang_currents()   
-            command =""
-
-def real_boot():
-    global salir
-    global Millis_ant
-    global trajectory_finished
-    global count
-    global Period
-
-    print("Starting control. Press ctrl+C to quit.")
-
-    condini()
-                
-    Period = 10   
-    Millis_ant = 0
-    
-    count = 0        
-    salir = False
-    
-    trajectory_finished = True
-    read_variables()#this updates old_ang_position & old_XYZ_position
-    publish_variables()  
-
-    while not(salir):
-        robot_control_logic()
-
-def sim_robot_control():
-    global salir
-    global Millis_ant
-    global trajectory_finished
-    global count
-    global Period
-
-    # condini()
-                
-    Period = 10   
-    Millis_ant = 0
-    
-    count = 0        
-    salir = False
-    
-    trajectory_finished = True
-
-    data = global_variables.ROWDY_DOF.euler_orientation()
-    callback_IMU(data)    
-
-    read_variables()#this updates old_ang_position & old_XYZ_position
-    publish_variables()  
-
-    if not(salir):
-        robot_control_logic()
-
-def sim_boot():
-    print("Starting classical control")
-
-    print("\r baby Rowdy control program  Sergio Montufar UTSA")
-    print("\r Spring 2024 Version: ", VERSION)
-    #try:
- 
-    setup_mqtt()                           
-
-    motor_list = ["Theta3", "Theta2", "Theta6", "Theta8", "Theta5", "Theta4", "Theta7", "Theta9", "Theta10", "Theta11", "Theta12"] 
-    
-    with TMotorManager_mit_can(motor_type=Type_1, motor_ID=ID_1) as dev1:
-        with TMotorManager_mit_can(motor_type=Type_1, motor_ID=ID_2) as dev2:
-            with TMotorManager_mit_can(motor_type=Type_1, motor_ID=ID_3) as dev3:
-                with TMotorManager_mit_can(motor_type=Type_1, motor_ID=ID_4) as dev4:
-                        with TMotorManager_mit_can(motor_type=Type_1, motor_ID=ID_5) as dev5:
-                            with TMotorManager_mit_can(motor_type=Type_1, motor_ID=ID_6) as dev6:
-                                with TMotorManager_mit_can(motor_type=Type_1, motor_ID=ID_7) as dev7:
-                                    with TMotorManager_mit_can(motor_type=Type_1, motor_ID=ID_8) as dev8:
-                                         with TMotorManager_mit_can(motor_type=Type_1, motor_ID=ID_9) as dev9:
-                                             with TMotorManager_mit_can(motor_type=Type_1, motor_ID=ID_10) as dev10:
-                                                with TMotorManager_mit_can(motor_type=Type_1, motor_ID=ID_11) as dev11: 
-                                                    #Add motor objects to a list called motors
-                                                    motors.clear()
-                                                    motors.extend([dev1,dev2,dev3,dev4,dev5,dev6,dev7,dev8,dev9,dev10,dev11])
-                                                    motors_dict = dictionary = dict(zip(motor_list, motors))
-                                                    print(motors_dict)
-                                                    print(VERSION)
-                                                    print("\r +++++++++++++++ Initialization:  ++++++++++++++  ")
-
-                                                    debug=1
-                                                    condini()
-                                                    # init_motors()
-                                                    
-                                                    init_gains()
-                                                    
-                                                    display_ang_positions()
-                                                    #home()  #The supports put it in home
-                                                    #print("Going home")
-                                                    #set_ang_position(INI_POSITIONS)  
-                                                    # imu.subscribe(callback_IMU)                                    
-                                                    # robot_control()
-                                                    # if salir :
-                                                    #         sys.exit()
-
                                      
 def robot_control():
     global command
@@ -2315,7 +2029,7 @@ def robot_control():
                 #step()#uses the global variable num_cycles
                     
 
-                #STEP_amplitudes = [step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang,step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang]
+                # = [step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang,step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang]
                 #STEP_amplitudes = np.radians(STEP_amplitudes)
                 sinusolidal_step(STEP_amplitudes)
                 #home() #send it to home last to return to the middle position
@@ -2328,7 +2042,7 @@ def robot_control():
                 #step()#uses the global variable num_cycles
                     
 
-                #STEP_amplitudes = [step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang,step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang]
+                # = [step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang,step_lower_leg_ang,-step_upper_leg_ang,step_CM_displacement_ang,step_turn_ang]
                 #STEP_amplitudes = np.radians(STEP_amplitudes)
                 sinusolidal_step(Jogging_amplitudes)
                 #home() #send it to home last to return to the middle position
@@ -2398,10 +2112,37 @@ if __name__ == '__main__':
 
     print("Setting Up MQTT")
 
-    setup_mqtt()
+    # Flag to indicate subscribe confirmation hasn't been printed yet.
+    didPrintSubscribeMessage = False
 
+    print('----------------------------------------')
 
-     
+    mqttClient = mqtt.Client()
+
+    # Set up calling functions to mqttClient
+
+    mqttClient.on_connect = on_connect  # attach function to callback
+    mqttClient.on_message = on_message  # attach function to callback
+
+    # Connect to the MQTT server  in the local LAN & loop forever.
+    # CTRL-C will stop the program from running.
+    print("server address is:", serverAddress)
+    mqttClient.connect(serverAddress)
+
+    print('----------------------------------------')
+ 
+    #mqttClient.loop_forever()# use this line if you don't want to write any further code. It blocks the code forever to check for data
+
+    # Start the MQTT client in a non-blocking thread
+    mqttClient.loop_start() #use this line if you want to write any more code here to execute along the mqtt client
+
+    # Write your main program here:
+    # Main program continues to run concurrently
+
+  
+    
+    
+    
  
                             
     motor_list = ["Theta3", "Theta2", "Theta6", "Theta8", "Theta5", "Theta4", "Theta7", "Theta9", "Theta10", "Theta11", "Theta12"] 
@@ -2432,7 +2173,7 @@ if __name__ == '__main__':
                                                     #home()  #The supports put it in home
                                                     #print("Going home")
                                                     #set_ang_position(INI_POSITIONS)                                      
-                                                    real_boot()
+                                                    robot_control()
                                                     if salir :
                                                             sys.exit()
                                             
