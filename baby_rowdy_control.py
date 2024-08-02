@@ -574,8 +574,8 @@ def on_message(client, userdata, message):
             
             step_delay_sin_neck = float((m_in["step"]["parameters"]["Delay_Neck"]))
             delay_sin_ankle = float((m_in["step"]["parameters"]["Delay_Ankle"]))           
-            step_neck_ang =  float((m_in["step"]["parameters"]["Neck_ang"]))
-            step_ankle_ang = float((m_in["step"]["parameters"]["Ankle_ang"]))    
+            step_neck_ang =  float((m_in["step"]["parameters"]["Neck_Ang"]))
+            step_ankle_ang = float((m_in["step"]["parameters"]["Ankle_Ang"]))    
             
             main_period = int((m_in["step"]["parameters"]["Main_period"]))     
               
@@ -1518,7 +1518,7 @@ def setup_sinusolidal_Jogging_step(cycles):
     sampling_time = 0.010 
 
     # Define parameters
-    #main_period = 2.0   # global variable: this is the period of the first sinusoidal functio
+    #main_period = 2.0   # global variable: this is the period of the first sinusoidal function
     # Frequency of the first sinusoidal function
     main_frequency = 1 /  main_period
 
@@ -1527,10 +1527,10 @@ def setup_sinusolidal_Jogging_step(cycles):
     amplitude3 = 1.0  # amplitude of the third sinusoidal function
     amplitude4 = 1.0  # amplitude of the third sinusoidal function
     
+    #NO DELAY on the limbs movement for jogging!
     #  lower leg sinusoid2 delay in seconds, this is a global variable
     # jog_delay_sin_lower_leg = main_period/16
-
-
+    
     # Calculate the frequency of the second sinusoidal function
     if jog_delay_sin_lower_leg == main_period/2:
         frequency2 = main_frequency *2  # Set a default frequency if delay equals period
@@ -1538,17 +1538,20 @@ def setup_sinusolidal_Jogging_step(cycles):
         frequency2 =( 1 / (main_period/2 - jog_delay_sin_lower_leg))/2
 
 
+
+    #NO DELAY on the limbs movement for jogging!
         # Upper leg sinusoid3 delay in seconds, this is a global variable
     #jog_delay_sin_upper_leg = main_period/8
 
-
-    # Calculate the frequency of the second sinusoidal function
+    # Calculate the frequency of the third sinusoidal function
     if jog_delay_sin_upper_leg == main_period/2:
         frequency3 = main_frequency *2  # Set a default frequency if delay equals period
     else:
         frequency3 =( 1 / (main_period/2 - jog_delay_sin_upper_leg))/2
 
-    # Calculate the frequency of the second sinusoidal function
+
+
+    # Calculate the frequency of the fourth sinusoidal function
     if jog_delay_sin_upper_leg == main_period/2:
         frequency4 = main_frequency *2  # Set a default frequency if delay equals period
     else:
@@ -1900,7 +1903,7 @@ def sinusolidal_step(amplitudes):
         command = ""   # VERY IMPORTANT, to finish the movement!
             
 
- 
+ #This function may not be neccesary
 def jogging_step(amplitudes):
     global debug
     global num_cycles
