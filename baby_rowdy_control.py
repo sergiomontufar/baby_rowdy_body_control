@@ -564,33 +564,36 @@ def on_message(client, userdata, message):
  
 
             
-            step_delay_sin_lower_leg = float((m_in["step"]["parameters"]["Delay_Lower_leg"]))
+            step_delay_sin_lower_leg = float((m_in["step"]["parameters"]["Delay_Lower_leg"]))/1000  #This time comes in mseconds  
             
-            step_delay_sin_upper_leg = float((m_in["step"]["parameters"]["Delay_Upper_leg"]))
+            step_delay_sin_upper_leg = float((m_in["step"]["parameters"]["Delay_Upper_leg"]))/1000  #This time comes in mseconds  
             
             half_size_step = int((m_in["step"]["parameters"]["Half_size_step"]))
             
             step_turn_ang = float((m_in["step"]["parameters"]["Turn_Ang"]))
             
-            step_delay_sin_neck = float((m_in["step"]["parameters"]["Delay_Neck"]))
-            delay_sin_ankle = float((m_in["step"]["parameters"]["Delay_Ankle"]))           
+            step_delay_sin_neck = float((m_in["step"]["parameters"]["Delay_Neck"]))/1000  #This time comes in mseconds  
+            delay_sin_ankle = float((m_in["step"]["parameters"]["Delay_Ankle"])) /1000  #This time comes in mseconds            
             step_neck_ang =  float((m_in["step"]["parameters"]["Neck_Ang"]))
             step_ankle_ang = float((m_in["step"]["parameters"]["Ankle_Ang"]))    
             
-            main_period = int((m_in["step"]["parameters"]["Main_period"]))     
+            main_period = float((m_in["step"]["parameters"]["Main_period"]))/1000  #This time comes in mseconds     
               
 
             print(" //// step parameters: //// ")
+            print("\r Main_period  [mSecs] = ", main_period)
+            print("\r Half_size_step = ", half_size_step)
+            
             print("\r Upper_Leg_Ang = ", step_upper_leg_ang)
             print("\r Lower_Leg_Ang = ", step_lower_leg_ang)
             print("\r CM_disp_Ang = ", step_CM_displacement_ang)
-            print("\r Main_period = ", main_period)
-            print("\r Delay_Lower_leg = ", step_delay_sin_lower_leg)
-            print("\r Delay_Upper_leg = ", step_delay_sin_upper_leg)
-            print("\r Half_size_step = ", half_size_step)
+            
+            print("\r Delay_Lower_leg [mSecs] = ", step_delay_sin_lower_leg)
+            print("\r Delay_Upper_leg [mSecs] = ", step_delay_sin_upper_leg)
+            
             print("\r Turn_Ang = ", step_turn_ang)
-            print("\r Delay_Neck = ", step_delay_sin_neck)
-            print("\r Delay_Ankle = ", delay_sin_ankle)
+            print("\r Delay_Neck [mSecs] = ", step_delay_sin_neck)
+            print("\r Delay_Ankle [mSecs] = ", delay_sin_ankle)
             print("\r step_neck_ang = ", step_neck_ang)
             print("\r step_ankle_ang = ", step_ankle_ang)
 
@@ -1527,7 +1530,7 @@ def setup_sinusolidal_Jogging_step(cycles):
     amplitude3 = 1.0  # amplitude of the third sinusoidal function
     amplitude4 = 1.0  # amplitude of the third sinusoidal function
     
-    #NO DELAY on the limbs movement for jogging!
+    #NO DELAY on the lower limbs movement for jogging!
     #  lower leg sinusoid2 delay in seconds, this is a global variable
     # jog_delay_sin_lower_leg = main_period/16
     
@@ -1539,7 +1542,7 @@ def setup_sinusolidal_Jogging_step(cycles):
 
 
 
-    #NO DELAY on the limbs movement for jogging!
+    #NO DELAY on the upper limbs movement for jogging!
         # Upper leg sinusoid3 delay in seconds, this is a global variable
     #jog_delay_sin_upper_leg = main_period/8
 
@@ -1550,7 +1553,10 @@ def setup_sinusolidal_Jogging_step(cycles):
         frequency3 =( 1 / (main_period/2 - jog_delay_sin_upper_leg))/2
 
 
-
+    #NO DELAY on the ankle  movement for jogging!
+        # Upper leg sinusoid4 delay in seconds, this is a global variable
+    #jog_delay_sin_ankle = main_period/16
+    
     # Calculate the frequency of the fourth sinusoidal function
     if jog_delay_sin_upper_leg == main_period/2:
         frequency4 = main_frequency *2  # Set a default frequency if delay equals period
